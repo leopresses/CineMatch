@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Clapperboard } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import PageShell from "@/components/PageShell";
 import MoodSelector from "@/components/MoodSelector";
 import RecommendationCard, { Recommendation } from "@/components/RecommendationCard";
-
-const mockRecommendations: Recommendation[] = [
-  { title: "Tudo em Todo Lugar ao Mesmo Tempo", type: "movie", reason: "Uma aventura criativa e emocionante perfeita para o seu humor.", tags: ["Ação", "Comédia", "Sci-Fi"], intensity: 4 },
-  { title: "Fleabag", type: "series", reason: "Humor inteligente e tocante para quando você quer algo leve.", tags: ["Comédia", "Drama"], intensity: 2 },
-  { title: "Parasita", type: "movie", reason: "Suspense brilhante que te prende do início ao fim.", tags: ["Thriller", "Drama", "Suspense"], intensity: 5 },
-];
 
 const HomePage = () => {
   const [mood, setMood] = useState({ time: "", mood: "", company: "" });
@@ -20,16 +16,42 @@ const HomePage = () => {
 
   const handleRecommend = async () => {
     setLoading(true);
-    // TODO: Replace with real AI call
-    await new Promise((r) => setTimeout(r, 1200));
-    setRecs(mockRecommendations);
-    setLoading(false);
+    setRecs(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("recommend", {
+        body: { context: mood },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+      } else {
+        setRecs(data.recommendations || []);
+      }
+    } catch (e: any) {
+      toast.error("Erro ao buscar recomendações. Tente novamente.");
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async (rec: Recommendation) => {
+    try {
+      const { error } = await supabase.from("watchlist").insert({
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        item_type: rec.type,
+        title: rec.title,
+      });
+      if (error) throw error;
+      toast.success(`"${rec.title}" salvo na sua lista!`);
+    } catch {
+      toast.error("Erro ao salvar. Tente novamente.");
+    }
   };
 
   return (
     <PageShell>
       <div className="space-y-6">
-        {/* Hero section */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -41,28 +63,19 @@ const HomePage = () => {
               <Clapperboard size={20} className="text-gold" />
               <span className="text-xs font-medium text-gold-light tracking-wide uppercase">NextWatch</span>
             </div>
-            <h2 className="font-display text-xl font-bold leading-tight">
-              O que vamos assistir hoje?
-            </h2>
-            <p className="text-sm mt-1 opacity-80">
-              Conte como você está e a IA encontra o match perfeito.
-            </p>
+            <h2 className="font-display text-xl font-bold leading-tight">O que vamos assistir hoje?</h2>
+            <p className="text-sm mt-1 opacity-80">Conte como você está e a IA encontra o match perfeito.</p>
           </div>
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/10 blur-3xl" />
         </motion.div>
 
-        {/* Mood selector */}
-        <MoodSelector
-          selected={mood}
-          onChange={(key, value) => setMood((p) => ({ ...p, [key]: value }))}
-        />
+        <MoodSelector selected={mood} onChange={(key, value) => setMood((p) => ({ ...p, [key]: value }))} />
 
-        {/* CTA */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleRecommend}
           disabled={!canRecommend || loading}
-          className={`w-full btn-gold flex items-center justify-center gap-2 text-base disabled:opacity-40 disabled:cursor-not-allowed`}
+          className="w-full btn-gold flex items-center justify-center gap-2 text-base disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
@@ -74,17 +87,13 @@ const HomePage = () => {
           )}
         </motion.button>
 
-        {/* Results */}
         <AnimatePresence>
           {recs && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-3 pb-4"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 pb-4">
               <h3 className="text-display text-lg">Recomendações pra você</h3>
+              {recs.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma recomendação encontrada. Tente outros filtros.</p>}
               {recs.map((rec, i) => (
-                <RecommendationCard key={rec.title} rec={rec} index={i} />
+                <RecommendationCard key={rec.title} rec={rec} index={i} onSave={() => handleSave(rec)} />
               ))}
             </motion.div>
           )}
