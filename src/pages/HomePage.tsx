@@ -2,12 +2,22 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Clapperboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import PageShell from "@/components/PageShell";
 import MoodSelector from "@/components/MoodSelector";
 import RecommendationCard, { Recommendation } from "@/components/RecommendationCard";
 
+const fallbackRecs: Recommendation[] = [
+  { title: "Tudo em Todo Lugar ao Mesmo Tempo", type: "movie", reason: "Uma aventura criativa e emocionante perfeita para qualquer momento.", tags: ["Ação", "Comédia", "Sci-Fi"], intensity: 4 },
+  { title: "Fleabag", type: "series", reason: "Humor inteligente e tocante para quando você quer algo leve.", tags: ["Comédia", "Drama"], intensity: 2 },
+  { title: "Parasita", type: "movie", reason: "Suspense brilhante que te prende do início ao fim.", tags: ["Thriller", "Drama"], intensity: 5 },
+  { title: "The Bear", type: "series", reason: "Intensidade e paixão na cozinha — impossível parar de assistir.", tags: ["Drama", "Comédia"], intensity: 4 },
+  { title: "Coco", type: "movie", reason: "Emocionante e colorido, perfeito para toda a família.", tags: ["Animação", "Família"], intensity: 1 },
+];
+
 const HomePage = () => {
+  const { user } = useAuth();
   const [mood, setMood] = useState({ time: "", mood: "", company: "" });
   const [recs, setRecs] = useState<Recommendation[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,21 +34,24 @@ const HomePage = () => {
       if (error) throw error;
       if (data?.error) {
         toast.error(data.error);
+        setRecs(fallbackRecs);
       } else {
-        setRecs(data.recommendations || []);
+        const result = data.recommendations || [];
+        setRecs(result.length > 0 ? result : fallbackRecs);
       }
-    } catch (e: any) {
-      toast.error("Erro ao buscar recomendações. Tente novamente.");
-      console.error(e);
+    } catch {
+      toast.error("Usando recomendações offline. A IA estará disponível em breve.");
+      setRecs(fallbackRecs);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async (rec: Recommendation) => {
+    if (!user) return;
     try {
       const { error } = await supabase.from("watchlist").insert({
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+        user_id: user.id,
         item_type: rec.type,
         title: rec.title,
       });
@@ -63,7 +76,7 @@ const HomePage = () => {
               <Clapperboard size={20} className="text-gold" />
               <span className="text-xs font-medium text-gold-light tracking-wide uppercase">NextWatch</span>
             </div>
-            <h2 className="font-display text-xl font-bold leading-tight">O que vamos assistir hoje?</h2>
+            <h1 className="font-display text-xl font-bold leading-tight">O que vamos assistir hoje?</h1>
             <p className="text-sm mt-1 opacity-80">Conte como você está e a IA encontra o match perfeito.</p>
           </div>
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-accent/10 blur-3xl" />
@@ -91,7 +104,6 @@ const HomePage = () => {
           {recs && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 pb-4">
               <h3 className="text-display text-lg">Recomendações pra você</h3>
-              {recs.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma recomendação encontrada. Tente outros filtros.</p>}
               {recs.map((rec, i) => (
                 <RecommendationCard key={rec.title} rec={rec} index={i} onSave={() => handleSave(rec)} />
               ))}

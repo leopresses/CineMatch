@@ -1,21 +1,24 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Home, Search, Users, Bookmark, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 const tabs = [
-  { path: "/", icon: Home, label: "Home" },
+  { path: "/home", icon: Home, label: "Home" },
   { path: "/search", icon: Search, label: "Buscar" },
   { path: "/sessions", icon: Users, label: "Sessões" },
   { path: "/watchlist", icon: Bookmark, label: "Lista" },
   { path: "/profile", icon: User, label: "Perfil" },
 ];
 
+const hiddenPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/privacy", "/terms"];
+
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Hide on auth pages
-  if (location.pathname.startsWith("/auth")) return null;
+  if (!user || hiddenPaths.some((p) => location.pathname.startsWith(p))) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass-surface bottom-safe" style={{ boxShadow: "var(--shadow-nav)" }}>
