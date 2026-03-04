@@ -24,6 +24,21 @@ const HomePage = () => {
 
   const canRecommend = mood.time && mood.mood && mood.company;
 
+  const enrichWithPosters = async (recommendations: Recommendation[]): Promise<Recommendation[]> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("enrich-titles", {
+        body: { titles: recommendations.map((r) => ({ title: r.title, type: r.type })) },
+      });
+      if (error || !data?.results) return recommendations;
+      return recommendations.map((rec, i) => ({
+        ...rec,
+        posterUrl: data.results[i]?.poster_url || rec.posterUrl,
+      }));
+    } catch {
+      return recommendations;
+    }
+  };
+
   const handleRecommend = async () => {
     setLoading(true);
     setRecs(null);
@@ -34,14 +49,15 @@ const HomePage = () => {
       if (error) throw error;
       if (data?.error) {
         toast.error(data.error);
-        setRecs(fallbackRecs);
+        setRecs(await enrichWithPosters(fallbackRecs));
       } else {
         const result = data.recommendations || [];
-        setRecs(result.length > 0 ? result : fallbackRecs);
+        const final = result.length > 0 ? result : fallbackRecs;
+        setRecs(await enrichWithPosters(final));
       }
     } catch {
       toast.error("Usando recomendações offline. A IA estará disponível em breve.");
-      setRecs(fallbackRecs);
+      setRecs(await enrichWithPosters(fallbackRecs));
     } finally {
       setLoading(false);
     }
@@ -54,6 +70,7 @@ const HomePage = () => {
         user_id: user.id,
         item_type: rec.type,
         title: rec.title,
+        poster_url: rec.posterUrl || null,
       });
       if (error) throw error;
       toast.success(`"${rec.title}" salvo na sua lista!`);

@@ -2,3 +2,15 @@ project_id = "hobhrnlpbdokmfbptpms"
 
 [functions.recommend]
 verify_jwt = false
+
+[functions.enrich-titles]
+verify_jwt = false
+
+[functions.trailer]
+verify_jwt = false
+
+[functions.backup-create]
+verify_jwt = false
+
+[functions.backup-restore]
+verify_jwt = false
