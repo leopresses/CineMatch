@@ -18,17 +18,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Ensure profile exists when user logs in
+  const ensureProfile = async (u: User) => {
+    try {
+      const { data } = await supabase.from("profiles").select("id").eq("id", u.id).maybeSingle();
+      if (!data) {
+        const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "";
+        await supabase.from("profiles").insert({ id: u.id, name });
+      }
+    } catch {
+      // silent – trigger may handle it
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (session?.user) {
+        // defer to avoid blocking auth flow
+        setTimeout(() => ensureProfile(session.user), 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (session?.user) {
+        setTimeout(() => ensureProfile(session.user), 0);
+      }
     });
 
     return () => subscription.unsubscribe();
