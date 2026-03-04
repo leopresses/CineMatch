@@ -34,36 +34,85 @@ interface Props {
   onChange: (key: "time" | "mood" | "company", value: string) => void;
 }
 
-function OptionCard({ option, isSelected, onClick }: { option: MoodOption; isSelected: boolean; onClick: () => void }) {
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function OptionCard({
+  option,
+  isSelected,
+  onClick,
+  variant = "normal",
+}: {
+  option: MoodOption;
+  isSelected: boolean;
+  onClick: () => void;
+  variant?: "compact" | "normal";
+}) {
   const Icon = option.icon;
 
+  const base = cx(
+    "w-full rounded-2xl border transition-all touch-target",
+    "bg-background/60 backdrop-blur hover:bg-background/80",
+    isSelected ? "border-orange-300 ring-2 ring-orange-200 shadow-sm" : "border-border",
+  );
+
+  if (variant === "compact") {
+    // Card compacto (perfeito pra grid 3 colunas) – sem truncar texto
+    return (
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.98 }}
+        onClick={onClick}
+        aria-pressed={isSelected}
+        className={cx(base, "p-2.5")}
+      >
+        <div className="flex flex-col items-center justify-center gap-1.5 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-lg leading-none">{option.emoji}</span>
+            <div
+              className={cx(
+                "h-7 w-7 rounded-xl flex items-center justify-center",
+                isSelected ? "bg-orange-100" : "bg-secondary",
+              )}
+            >
+              <Icon className={isSelected ? "text-orange-600" : "text-muted-foreground"} size={16} />
+            </div>
+          </div>
+
+          <div className="text-sm font-semibold leading-tight">{option.label}</div>
+
+          {option.hint ? <div className="text-[11px] text-muted-foreground leading-none">{option.hint}</div> : null}
+        </div>
+      </motion.button>
+    );
+  }
+
+  // Card normal (grid 2 colunas) – layout horizontal e mais “premium”
   return (
     <motion.button
       type="button"
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       aria-pressed={isSelected}
-      className={[
-        "w-full rounded-2xl border p-3 text-left transition-all touch-target",
-        "bg-background/60 backdrop-blur",
-        "hover:bg-background/80",
-        isSelected ? "border-orange-300 ring-2 ring-orange-200 shadow-sm" : "border-border",
-      ].join(" ")}
+      className={cx(base, "p-3")}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg leading-none">{option.emoji}</span>
           <div className="min-w-0">
-            <div className="text-sm font-semibold truncate">{option.label}</div>
-            {option.hint ? <div className="text-[11px] text-muted-foreground truncate">{option.hint}</div> : null}
+            <div className="text-sm font-semibold leading-tight truncate">{option.label}</div>
+            {option.hint ? (
+              <div className="text-[11px] text-muted-foreground leading-tight truncate">{option.hint}</div>
+            ) : null}
           </div>
         </div>
 
         <div
-          className={[
-            "h-9 w-9 rounded-xl flex items-center justify-center",
+          className={cx(
+            "h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0",
             isSelected ? "bg-orange-100" : "bg-secondary",
-          ].join(" ")}
+          )}
         >
           <Icon className={isSelected ? "text-orange-600" : "text-muted-foreground"} size={18} />
         </div>
@@ -78,6 +127,8 @@ export default function MoodSelector({ selected, onChange }: Props) {
       {/* Tempo */}
       <div>
         <p className="text-sm font-medium text-muted-foreground mb-2">⏱ Tempo disponível</p>
+
+        {/* Mantém 3 colunas, mas com card COMPACTO (não quebra) */}
         <div className="grid grid-cols-3 gap-2">
           {timeOptions.map((o) => (
             <OptionCard
@@ -85,6 +136,7 @@ export default function MoodSelector({ selected, onChange }: Props) {
               option={o}
               isSelected={selected.time === o.id}
               onClick={() => onChange("time", o.id)}
+              variant="compact"
             />
           ))}
         </div>
@@ -100,6 +152,7 @@ export default function MoodSelector({ selected, onChange }: Props) {
               option={o}
               isSelected={selected.mood === o.id}
               onClick={() => onChange("mood", o.id)}
+              variant="normal"
             />
           ))}
         </div>
@@ -115,6 +168,7 @@ export default function MoodSelector({ selected, onChange }: Props) {
               option={o}
               isSelected={selected.company === o.id}
               onClick={() => onChange("company", o.id)}
+              variant="normal"
             />
           ))}
         </div>
