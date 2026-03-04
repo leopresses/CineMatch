@@ -42,12 +42,12 @@ function OptionCard({
   option,
   isSelected,
   onClick,
-  variant = "normal",
+  density = "normal",
 }: {
   option: MoodOption;
   isSelected: boolean;
   onClick: () => void;
-  variant?: "compact" | "normal";
+  density?: "compact" | "normal";
 }) {
   const Icon = option.icon;
 
@@ -57,65 +57,42 @@ function OptionCard({
     isSelected ? "border-orange-300 ring-2 ring-orange-200 shadow-sm" : "border-border",
   );
 
-  if (variant === "compact") {
-    // Card compacto (perfeito pra grid 3 colunas) – sem truncar texto
-    return (
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.98 }}
-        onClick={onClick}
-        aria-pressed={isSelected}
-        className={cx(base, "p-2.5")}
-      >
-        <div className="flex flex-col items-center justify-center gap-1.5 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-lg leading-none">{option.emoji}</span>
-            <div
-              className={cx(
-                "h-7 w-7 rounded-xl flex items-center justify-center",
-                isSelected ? "bg-orange-100" : "bg-secondary",
-              )}
-            >
-              <Icon className={isSelected ? "text-orange-600" : "text-muted-foreground"} size={16} />
-            </div>
-          </div>
+  const iconBoxSize = density === "compact" ? "h-7 w-7" : "h-9 w-9";
+  const iconSize = density === "compact" ? 16 : 18;
+  const padding = density === "compact" ? "p-2.5" : "p-3";
+  const labelClass = density === "compact" ? "text-sm" : "text-sm";
+  const hintClass = density === "compact" ? "text-[11px]" : "text-[11px]";
 
-          <div className="text-sm font-semibold leading-tight">{option.label}</div>
-
-          {option.hint ? <div className="text-[11px] text-muted-foreground leading-none">{option.hint}</div> : null}
-        </div>
-      </motion.button>
-    );
-  }
-
-  // Card normal (grid 2 colunas) – layout horizontal e mais “premium”
   return (
     <motion.button
       type="button"
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       aria-pressed={isSelected}
-      className={cx(base, "p-3")}
+      className={cx(base, padding)}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Layout vertical: evita truncar em celular */}
+      <div className="flex flex-col items-center justify-center text-center gap-1.5">
+        <div className="flex items-center justify-center gap-2">
           <span className="text-lg leading-none">{option.emoji}</span>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold leading-tight truncate">{option.label}</div>
-            {option.hint ? (
-              <div className="text-[11px] text-muted-foreground leading-tight truncate">{option.hint}</div>
-            ) : null}
+
+          <div
+            className={cx(
+              iconBoxSize,
+              "rounded-xl flex items-center justify-center",
+              isSelected ? "bg-orange-100" : "bg-secondary",
+            )}
+          >
+            <Icon className={isSelected ? "text-orange-600" : "text-muted-foreground"} size={iconSize} />
           </div>
         </div>
 
-        <div
-          className={cx(
-            "h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0",
-            isSelected ? "bg-orange-100" : "bg-secondary",
-          )}
-        >
-          <Icon className={isSelected ? "text-orange-600" : "text-muted-foreground"} size={18} />
-        </div>
+        {/* Sem truncate: permite quebrar linha */}
+        <div className={cx(labelClass, "font-semibold leading-tight px-1 break-words")}>{option.label}</div>
+
+        {option.hint ? (
+          <div className={cx(hintClass, "text-muted-foreground leading-none px-1 break-words")}>{option.hint}</div>
+        ) : null}
       </div>
     </motion.button>
   );
@@ -127,8 +104,6 @@ export default function MoodSelector({ selected, onChange }: Props) {
       {/* Tempo */}
       <div>
         <p className="text-sm font-medium text-muted-foreground mb-2">⏱ Tempo disponível</p>
-
-        {/* Mantém 3 colunas, mas com card COMPACTO (não quebra) */}
         <div className="grid grid-cols-3 gap-2">
           {timeOptions.map((o) => (
             <OptionCard
@@ -136,7 +111,7 @@ export default function MoodSelector({ selected, onChange }: Props) {
               option={o}
               isSelected={selected.time === o.id}
               onClick={() => onChange("time", o.id)}
-              variant="compact"
+              density="compact"
             />
           ))}
         </div>
@@ -152,7 +127,7 @@ export default function MoodSelector({ selected, onChange }: Props) {
               option={o}
               isSelected={selected.mood === o.id}
               onClick={() => onChange("mood", o.id)}
-              variant="normal"
+              density="normal"
             />
           ))}
         </div>
@@ -168,7 +143,7 @@ export default function MoodSelector({ selected, onChange }: Props) {
               option={o}
               isSelected={selected.company === o.id}
               onClick={() => onChange("company", o.id)}
-              variant="normal"
+              density="normal"
             />
           ))}
         </div>
