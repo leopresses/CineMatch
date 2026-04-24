@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Clapperboard, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,15 @@ import PageShell from "@/components/PageShell";
 import MoodSelector from "@/components/MoodSelector";
 import RecommendationCard, { Recommendation } from "@/components/RecommendationCard";
 import { sanitizeRecommendation } from "@/lib/sanitize";
+import {
+  buildUserProfile,
+  filterRejected,
+  rankRecommendations,
+  isHighMatch,
+  personalizationLabel,
+  type SwipeRecord,
+  type RankedRecommendation,
+} from "@/lib/recommendationEngine";
 
 const fallbackRecs: Recommendation[] = [
   {
@@ -51,8 +60,25 @@ const HomePage = () => {
   const { user } = useAuth();
 
   const [mood, setMood] = useState({ time: "", mood: "", company: "" });
-  const [recs, setRecs] = useState<Recommendation[] | null>(null);
+  const [recs, setRecs] = useState<RankedRecommendation[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [swipes, setSwipes] = useState<SwipeRecord[]>([]);
+
+  // Load swipe history once for personalization
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("user_swipes")
+        .select("title, liked, tags, intensity, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+      setSwipes((data || []) as SwipeRecord[]);
+    })();
+  }, [user]);
+
+  // Profile is derived — memoize to avoid recomputing on every render
+  const profile = useMemo(() => buildUserProfile(swipes), [swipes]);
 
   const stepsDone = useMemo(() => {
     let n = 0;
@@ -81,6 +107,21 @@ const HomePage = () => {
     }
   };
 
+  /**
+   * Apply behavioural personalization:
+   * 1. Drop titles already rejected
+   * 2. Rank by score (only if user has enough swipe history)
+   * Falls back to original order when not yet personalized.
+   */
+  const personalize = (list: Recommendation[]): RankedRecommendation[] => {
+    const filtered = filterRejected(list, swipes);
+    const pool = filtered.length > 0 ? filtered : list;
+    if (profile.swipeCount < 5) {
+      return pool.map((r) => ({ ...r, score: 0 }));
+    }
+    return rankRecommendations(pool, profile);
+  };
+
   const handleRecommend = async () => {
     setLoading(true);
     setRecs(null);
@@ -94,7 +135,7 @@ const HomePage = () => {
 
       if (data?.error) {
         toast.error(data.error);
-        setRecs(await enrichWithPosters(fallbackRecs));
+        setRecs(personalize(await enrichWithPosters(fallbackRecs)));
       } else {
         const raw = Array.isArray(data?.recommendations) ? data.recommendations : [];
         // Sanitiza títulos/reason/tags vindos da IA (remove caracteres corrompidos)
@@ -102,11 +143,11 @@ const HomePage = () => {
           .map((r: Recommendation) => sanitizeRecommendation(r) as Recommendation)
           .filter((r: Recommendation) => r.title.length > 0);
         const final = cleaned.length > 0 ? cleaned : fallbackRecs;
-        setRecs(await enrichWithPosters(final));
+        setRecs(personalize(await enrichWithPosters(final)));
       }
     } catch {
       toast.error("Usando recomendações offline. A IA estará disponível em breve.");
-      setRecs(await enrichWithPosters(fallbackRecs));
+      setRecs(personalize(await enrichWithPosters(fallbackRecs)));
     } finally {
       setLoading(false);
     }
@@ -231,7 +272,10 @@ const HomePage = () => {
           {recs && (
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 pb-10">
               <div className="flex items-end justify-between">
-                <h3 className="text-display text-lg">Recomendações pra você</h3>
+                <div>
+                  <h3 className="text-display text-lg">Recomendações pra você</h3>
+                  <p className="text-xs text-muted-foreground">{personalizationLabel(profile)}</p>
+                </div>
                 <span className="text-xs text-muted-foreground">{recs.length} opções</span>
               </div>
 
@@ -241,6 +285,7 @@ const HomePage = () => {
                   rec={rec}
                   index={i}
                   onSave={() => handleSave(rec)}
+                  highMatch={isHighMatch(rec.score, profile)}
                 />
               ))}
             </motion.section>

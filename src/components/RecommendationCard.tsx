@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Bookmark, Star, Film, Tv, Play, ExternalLink } from "lucide-react";
+import { Bookmark, Star, Film, Tv, Play, ExternalLink, Flame } from "lucide-react";
 import TrailerModal from "./TrailerModal";
 
 export interface Recommendation {
@@ -17,9 +17,10 @@ interface Props {
   rec: Recommendation;
   index: number;
   onSave?: () => void;
+  highMatch?: boolean;
 }
 
-const RecommendationCard = ({ rec, index, onSave }: Props) => {
+const RecommendationCard = ({ rec, index, onSave, highMatch }: Props) => {
   const [imgError, setImgError] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
 
@@ -51,7 +52,15 @@ const RecommendationCard = ({ rec, index, onSave }: Props) => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display font-semibold text-sm leading-tight">{rec.title}</h3>
+            <div className="min-w-0">
+              <h3 className="font-display font-semibold text-sm leading-tight">{rec.title}</h3>
+              {highMatch && (
+                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent/15 text-accent">
+                  <Flame size={10} className="fill-accent" />
+                  Alta chance de você gostar
+                </span>
+              )}
+            </div>
             <button onClick={onSave} className="touch-target flex items-center justify-center p-1 -mr-1 text-muted-foreground hover:text-accent transition-colors">
               <Bookmark size={18} />
             </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, X, Sparkles, Flame, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,13 @@ import PageShell from "@/components/PageShell";
 import SwipeCard from "@/components/SwipeCard";
 import { sanitizeRecommendation } from "@/lib/sanitize";
 import type { Recommendation } from "@/components/RecommendationCard";
+import {
+  buildUserProfile,
+  filterRejected,
+  rankRecommendations,
+  personalizationLabel,
+  type SwipeRecord,
+} from "@/lib/recommendationEngine";
 
 const fallbackRecs: Recommendation[] = [
   {
@@ -66,7 +73,11 @@ const SwipePage = () => {
   const [cards, setCards] = useState<Recommendation[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [seenTitles, setSeenTitles] = useState<Set<string>>(new Set());
+  const [, setSeenTitles] = useState<Set<string>>(new Set());
+  const [swipes, setSwipes] = useState<SwipeRecord[]>([]);
+
+  // Memoized profile — recomputes only when swipe history changes
+  const profile = useMemo(() => buildUserProfile(swipes), [swipes]);
 
   const enrichWithPosters = async (recs: Recommendation[]): Promise<Recommendation[]> => {
     try {
@@ -85,15 +96,17 @@ const SwipePage = () => {
       setLoading(true);
       setIndex(0);
 
-      // 1) Get already-swiped titles to filter out
-      let alreadySeen = new Set<string>();
+      // 1) Get full swipe history (used for both filtering & ranking)
+      let history: SwipeRecord[] = [];
       if (user) {
         const { data: swiped } = await supabase
           .from("user_swipes")
-          .select("title")
-          .eq("user_id", user.id);
-        alreadySeen = new Set((swiped || []).map((s) => s.title));
-        setSeenTitles(alreadySeen);
+          .select("title, liked, tags, intensity, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
+        history = (swiped || []) as SwipeRecord[];
+        setSwipes(history);
+        setSeenTitles(new Set(history.map((s) => s.title)));
       }
 
       // 2) Try IA recommendation
@@ -118,11 +131,22 @@ const SwipePage = () => {
         if (showToast) toast.message("Usando descobertas offline.");
       }
 
-      // 3) Filter out already-swiped
-      const fresh = pool.filter((r) => !alreadySeen.has(r.title));
-      const finalList = fresh.length > 0 ? fresh : pool;
+      // 3) Skip everything already swiped (like or dislike)
+      const seen = new Set(history.map((s) => s.title));
+      let fresh = pool.filter((r) => !seen.has(r.title));
+      // Extra guard: drop anything explicitly rejected
+      fresh = filterRejected(fresh, history);
 
-      const enriched = await enrichWithPosters(finalList);
+      const candidates = fresh.length > 0 ? fresh : pool;
+
+      // 4) Personalize ordering once we have enough swipes
+      const localProfile = buildUserProfile(history);
+      const ranked =
+        localProfile.swipeCount >= 5
+          ? rankRecommendations(candidates, localProfile)
+          : candidates;
+
+      const enriched = await enrichWithPosters(ranked);
       setCards(enriched);
       setLoading(false);
     },
@@ -140,15 +164,29 @@ const SwipePage = () => {
     setIndex((i) => i + 1);
     setSeenTitles((s) => new Set(s).add(current.title));
 
+    // Optimistically update local swipe history so the profile adapts immediately
+    setSwipes((prev) => [
+      ...prev,
+      {
+        title: current.title,
+        liked,
+        tags: current.tags || [],
+        intensity: current.intensity || 3,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
     if (!user) return;
 
     try {
-      // Save swipe
+      // Save swipe with full context for the recommendation engine
       await supabase.from("user_swipes").insert({
         user_id: user.id,
         title: current.title,
         item_type: current.type,
         liked,
+        tags: current.tags || [],
+        intensity: current.intensity || 3,
       });
 
       // If liked, also add to watchlist (idempotent attempt)
@@ -176,10 +214,11 @@ const SwipePage = () => {
           <Flame size={22} className="text-accent" />
           <h1 className="text-display text-2xl">Descobrir</h1>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-muted-foreground mb-1">
           Arraste para o lado: <span className="text-emerald-500 font-medium">→ gostei</span>,{" "}
           <span className="text-rose-500 font-medium">← passar</span>.
         </p>
+        <p className="text-xs text-accent font-medium mb-6">{personalizationLabel(profile)}</p>
 
         {/* Stack area */}
         <div className="relative w-full mx-auto" style={{ aspectRatio: "3 / 4", maxWidth: 380 }}>
