@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import PageShell from "@/components/PageShell";
 import MoodSelector from "@/components/MoodSelector";
 import RecommendationCard, { Recommendation } from "@/components/RecommendationCard";
+import { sanitizeRecommendation } from "@/lib/sanitize";
 
 const fallbackRecs: Recommendation[] = [
   {
@@ -95,8 +96,12 @@ const HomePage = () => {
         toast.error(data.error);
         setRecs(await enrichWithPosters(fallbackRecs));
       } else {
-        const result = data.recommendations || [];
-        const final = result.length > 0 ? result : fallbackRecs;
+        const raw = Array.isArray(data?.recommendations) ? data.recommendations : [];
+        // Sanitiza títulos/reason/tags vindos da IA (remove caracteres corrompidos)
+        const cleaned = raw
+          .map((r: Recommendation) => sanitizeRecommendation(r) as Recommendation)
+          .filter((r: Recommendation) => r.title.length > 0);
+        const final = cleaned.length > 0 ? cleaned : fallbackRecs;
         setRecs(await enrichWithPosters(final));
       }
     } catch {
