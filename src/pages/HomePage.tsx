@@ -107,6 +107,21 @@ const HomePage = () => {
     }
   };
 
+  /**
+   * Apply behavioural personalization:
+   * 1. Drop titles already rejected
+   * 2. Rank by score (only if user has enough swipe history)
+   * Falls back to original order when not yet personalized.
+   */
+  const personalize = (list: Recommendation[]): RankedRecommendation[] => {
+    const filtered = filterRejected(list, swipes);
+    const pool = filtered.length > 0 ? filtered : list;
+    if (profile.swipeCount < 5) {
+      return pool.map((r) => ({ ...r, score: 0 }));
+    }
+    return rankRecommendations(pool, profile);
+  };
+
   const handleRecommend = async () => {
     setLoading(true);
     setRecs(null);
@@ -120,7 +135,7 @@ const HomePage = () => {
 
       if (data?.error) {
         toast.error(data.error);
-        setRecs(await enrichWithPosters(fallbackRecs));
+        setRecs(personalize(await enrichWithPosters(fallbackRecs)));
       } else {
         const raw = Array.isArray(data?.recommendations) ? data.recommendations : [];
         // Sanitiza títulos/reason/tags vindos da IA (remove caracteres corrompidos)
@@ -128,11 +143,11 @@ const HomePage = () => {
           .map((r: Recommendation) => sanitizeRecommendation(r) as Recommendation)
           .filter((r: Recommendation) => r.title.length > 0);
         const final = cleaned.length > 0 ? cleaned : fallbackRecs;
-        setRecs(await enrichWithPosters(final));
+        setRecs(personalize(await enrichWithPosters(final)));
       }
     } catch {
       toast.error("Usando recomendações offline. A IA estará disponível em breve.");
-      setRecs(await enrichWithPosters(fallbackRecs));
+      setRecs(personalize(await enrichWithPosters(fallbackRecs)));
     } finally {
       setLoading(false);
     }
