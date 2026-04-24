@@ -33,7 +33,7 @@ const RecommendationCard = ({ rec, index, onSave }: Props) => {
         transition={{ delay: index * 0.08, duration: 0.4 }}
         className="card-cinema flex gap-3 items-start"
       >
-        <div className="w-20 h-28 rounded-lg bg-secondary flex-shrink-0 flex items-center justify-center overflow-hidden">
+        <div className="w-20 h-28 rounded-lg bg-gradient-to-br from-secondary to-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
           {rec.posterUrl && !imgError ? (
             <img
               src={rec.posterUrl}
@@ -43,9 +43,9 @@ const RecommendationCard = ({ rec, index, onSave }: Props) => {
               loading="lazy"
             />
           ) : (
-            <div className="flex flex-col items-center gap-1 text-muted-foreground">
-              {rec.type === "movie" ? <Film size={24} /> : <Tv size={24} />}
-              <span className="text-[9px]">{rec.type === "movie" ? "Filme" : "Série"}</span>
+            <div className="flex flex-col items-center gap-1 text-muted-foreground p-1 text-center">
+              {rec.type === "movie" ? <Film size={20} /> : <Tv size={20} />}
+              <span className="text-[9px] leading-tight">Sem imagem</span>
             </div>
           )}
         </div>
