@@ -272,7 +272,10 @@ const HomePage = () => {
           {recs && (
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 pb-10">
               <div className="flex items-end justify-between">
-                <h3 className="text-display text-lg">Recomendações pra você</h3>
+                <div>
+                  <h3 className="text-display text-lg">Recomendações pra você</h3>
+                  <p className="text-xs text-muted-foreground">{personalizationLabel(profile)}</p>
+                </div>
                 <span className="text-xs text-muted-foreground">{recs.length} opções</span>
               </div>
 
@@ -282,6 +285,7 @@ const HomePage = () => {
                   rec={rec}
                   index={i}
                   onSave={() => handleSave(rec)}
+                  highMatch={isHighMatch(rec.score, profile)}
                 />
               ))}
             </motion.section>
