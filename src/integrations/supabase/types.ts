@@ -230,8 +230,10 @@ export type Database = {
           created_at: string
           external_id: string | null
           id: string
+          intensity: number | null
           item_type: Database["public"]["Enums"]["item_type"]
           liked: boolean
+          tags: string[] | null
           title: string
           user_id: string
         }
@@ -239,8 +241,10 @@ export type Database = {
           created_at?: string
           external_id?: string | null
           id?: string
+          intensity?: number | null
           item_type: Database["public"]["Enums"]["item_type"]
           liked?: boolean
+          tags?: string[] | null
           title: string
           user_id: string
         }
@@ -248,8 +252,10 @@ export type Database = {
           created_at?: string
           external_id?: string | null
           id?: string
+          intensity?: number | null
           item_type?: Database["public"]["Enums"]["item_type"]
           liked?: boolean
+          tags?: string[] | null
           title?: string
           user_id?: string
         }
