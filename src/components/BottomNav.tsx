@@ -1,11 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Users, Bookmark, User } from "lucide-react";
+import { Home, Flame, Users, Bookmark, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 
 const tabs = [
   { path: "/home", icon: Home, label: "Home" },
-  { path: "/search", icon: Search, label: "Buscar" },
+  { path: "/swipe", icon: Flame, label: "Descobrir" },
   { path: "/sessions", icon: Users, label: "Sessões" },
   { path: "/watchlist", icon: Bookmark, label: "Lista" },
   { path: "/profile", icon: User, label: "Perfil" },

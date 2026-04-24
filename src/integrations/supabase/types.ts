@@ -225,6 +225,36 @@ export type Database = {
           },
         ]
       }
+      user_swipes: {
+        Row: {
+          created_at: string
+          external_id: string | null
+          id: string
+          item_type: Database["public"]["Enums"]["item_type"]
+          liked: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          item_type: Database["public"]["Enums"]["item_type"]
+          liked?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          item_type?: Database["public"]["Enums"]["item_type"]
+          liked?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       watch_sessions: {
         Row: {
           chosen_external_id: string | null
