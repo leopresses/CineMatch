@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Bookmark, Star, Film, Tv, Play, ExternalLink } from "lucide-react";
+import { Bookmark, Star, Film, Tv, Play, ExternalLink, Flame } from "lucide-react";
 import TrailerModal from "./TrailerModal";
 
 export interface Recommendation {
@@ -17,6 +17,7 @@ interface Props {
   rec: Recommendation;
   index: number;
   onSave?: () => void;
+  highMatch?: boolean;
 }
 
 const RecommendationCard = ({ rec, index, onSave }: Props) => {
