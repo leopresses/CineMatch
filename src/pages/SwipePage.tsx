@@ -214,10 +214,11 @@ const SwipePage = () => {
           <Flame size={22} className="text-accent" />
           <h1 className="text-display text-2xl">Descobrir</h1>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-muted-foreground mb-1">
           Arraste para o lado: <span className="text-emerald-500 font-medium">→ gostei</span>,{" "}
           <span className="text-rose-500 font-medium">← passar</span>.
         </p>
+        <p className="text-xs text-accent font-medium mb-6">{personalizationLabel(profile)}</p>
 
         {/* Stack area */}
         <div className="relative w-full mx-auto" style={{ aspectRatio: "3 / 4", maxWidth: 380 }}>
