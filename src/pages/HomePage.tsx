@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Clapperboard, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,15 @@ import PageShell from "@/components/PageShell";
 import MoodSelector from "@/components/MoodSelector";
 import RecommendationCard, { Recommendation } from "@/components/RecommendationCard";
 import { sanitizeRecommendation } from "@/lib/sanitize";
+import {
+  buildUserProfile,
+  filterRejected,
+  rankRecommendations,
+  isHighMatch,
+  personalizationLabel,
+  type SwipeRecord,
+  type RankedRecommendation,
+} from "@/lib/recommendationEngine";
 
 const fallbackRecs: Recommendation[] = [
   {
