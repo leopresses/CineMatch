@@ -60,8 +60,25 @@ const HomePage = () => {
   const { user } = useAuth();
 
   const [mood, setMood] = useState({ time: "", mood: "", company: "" });
-  const [recs, setRecs] = useState<Recommendation[] | null>(null);
+  const [recs, setRecs] = useState<RankedRecommendation[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [swipes, setSwipes] = useState<SwipeRecord[]>([]);
+
+  // Load swipe history once for personalization
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("user_swipes")
+        .select("title, liked, tags, intensity, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+      setSwipes((data || []) as SwipeRecord[]);
+    })();
+  }, [user]);
+
+  // Profile is derived — memoize to avoid recomputing on every render
+  const profile = useMemo(() => buildUserProfile(swipes), [swipes]);
 
   const stepsDone = useMemo(() => {
     let n = 0;
