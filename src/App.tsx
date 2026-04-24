@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
 import HomePage from "./pages/HomePage";
 import SearchPage from "./pages/SearchPage";
+import SwipePage from "./pages/SwipePage";
 import SessionsPage from "./pages/SessionsPage";
 import WatchlistPage from "./pages/WatchlistPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -63,6 +64,7 @@ const AppRoutes = () => (
       {/* Protected routes */}
       <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
       <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+      <Route path="/swipe" element={<ProtectedRoute><SwipePage /></ProtectedRoute>} />
       <Route path="/sessions" element={<ProtectedRoute><SessionsPage /></ProtectedRoute>} />
       <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
