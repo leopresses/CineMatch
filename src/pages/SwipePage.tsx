@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, X, Sparkles, Flame, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,13 @@ import PageShell from "@/components/PageShell";
 import SwipeCard from "@/components/SwipeCard";
 import { sanitizeRecommendation } from "@/lib/sanitize";
 import type { Recommendation } from "@/components/RecommendationCard";
+import {
+  buildUserProfile,
+  filterRejected,
+  rankRecommendations,
+  personalizationLabel,
+  type SwipeRecord,
+} from "@/lib/recommendationEngine";
 
 const fallbackRecs: Recommendation[] = [
   {
