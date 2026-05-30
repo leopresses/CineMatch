@@ -29,14 +29,14 @@ const WatchlistPage = () => {
     try {
       const q = query(
         collection(db, "watchlist"),
-        where("user_id", "==", user.uid),
-        orderBy("added_at", "desc")
+        where("user_id", "==", user.uid)
       );
       const querySnapshot = await getDocs(q);
       const data: WatchlistItem[] = [];
       querySnapshot.forEach((docSnap) => {
         data.push({ id: docSnap.id, ...docSnap.data() } as WatchlistItem);
       });
+      data.sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime());
       setItems(data);
     } catch (e) {
       console.error("Erro ao carregar lista", e);

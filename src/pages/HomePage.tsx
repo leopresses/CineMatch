@@ -56,10 +56,11 @@ const HomePage = () => {
     // Load swipes
     (async () => {
       try {
-        const q = query(collection(db, "user_swipes"), where("user_id", "==", user.uid), orderBy("created_at", "asc"));
+        const q = query(collection(db, "user_swipes"), where("user_id", "==", user.uid));
         const snaps = await getDocs(q);
         const data: SwipeRecord[] = [];
         snaps.forEach(doc => data.push(doc.data() as SwipeRecord));
+        data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setSwipes(data);
       } catch (e) {
         console.error(e);
@@ -77,11 +78,12 @@ const HomePage = () => {
     // Load watchlist preview
     (async () => {
       try {
-        const q = query(collection(db, "watchlist"), where("user_id", "==", user.uid), orderBy("added_at", "desc"), limit(5));
+        const q = query(collection(db, "watchlist"), where("user_id", "==", user.uid));
         const snaps = await getDocs(q);
         const data: any[] = [];
         snaps.forEach(doc => data.push(doc.data()));
-        setWatchlistPreview(data);
+        data.sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime());
+        setWatchlistPreview(data.slice(0, 5));
       } catch {}
     })();
 

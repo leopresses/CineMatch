@@ -73,11 +73,13 @@ const SwipePage = () => {
       try {
         const q = query(
           collection(db, "user_swipes"),
-          where("user_id", "==", user.uid),
-          orderBy("created_at", "asc")
+          where("user_id", "==", user.uid)
         );
         const snaps = await getDocs(q);
-        snaps.forEach(d => history.push(d.data() as SwipeRecord));
+        const data: any[] = [];
+        snaps.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+        data.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        history = data;
         setSwipes(history);
         setSeenTitles(new Set(history.map(s => s.title)));
       } catch (e) {
