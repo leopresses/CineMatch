@@ -116,7 +116,6 @@ const SessionSwipePage = () => {
   }, [sessionId, user]);
 
   const handleSwipe = async (liked: boolean) => {
-    if (isProcessingSwipe) return;
     setIsProcessingSwipe(true);
     
     if (!user || !sessionId || currentIndex >= recs.length) {

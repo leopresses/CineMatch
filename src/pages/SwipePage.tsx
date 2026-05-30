@@ -148,7 +148,6 @@ const SwipePage = () => {
   };
 
   const handleSwipe = async (liked: boolean) => {
-    if (isProcessingSwipe) return;
     setIsProcessingSwipe(true);
     
     const current = cards[index];
