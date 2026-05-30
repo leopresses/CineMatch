@@ -38,6 +38,21 @@ service cloud.firestore {
       allow read, delete, update: if isAuthed() && resource.data.user_id == request.auth.uid;
       allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
     }
+    
+    match /user_watchlist/{itemId} {
+      allow read, delete, update: if isAuthed() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    match /user_collections/{collectionId} {
+      allow read, delete, update: if isAuthed() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    match /user_ratings/{ratingId} {
+      allow read, delete, update: if isAuthed() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+    }
 
     // 4. AVALIAÇÕES PÚBLICAS (REVIEWS)
     // Qualquer um pode ler as avaliações, mas só o dono pode criar/editar a dele.
@@ -67,7 +82,7 @@ service cloud.firestore {
       allow delete: if isAuthed();
     }
 
-    match /session_swipes/{swipeId} {
+    match /session_votes/{voteId} {
       allow read: if isAuthed();
       allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
     }
