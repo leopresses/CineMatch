@@ -13,6 +13,7 @@ import SwipePage from "./pages/SwipePage";
 import SessionsPage from "./pages/SessionsPage";
 import CollectionsPage from "./pages/CollectionsPage";
 import CollectionDetailsPage from "./pages/CollectionDetailsPage";
+import WatchlistPage from "./pages/WatchlistPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
@@ -75,6 +76,7 @@ const AppRoutes = () => (
       <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
       <Route path="/swipe" element={<ProtectedRoute><SwipePage /></ProtectedRoute>} />
       <Route path="/sessions" element={<ProtectedRoute><SessionsPage /></ProtectedRoute>} />
+      <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
       <Route path="/collections" element={<ProtectedRoute><CollectionsPage /></ProtectedRoute>} />
       <Route path="/collection/:id" element={<ProtectedRoute><CollectionDetailsPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
