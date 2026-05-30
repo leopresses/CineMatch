@@ -8,14 +8,44 @@ interface Props {
 
 const AuthLayout = ({ children }: Props) => (
   <div className="min-h-screen flex flex-col relative overflow-hidden bg-black">
-    {/* Fundo Cinemático com Imagem */}
-    <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 z-0 overflow-hidden">
       <img 
         src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=1200" 
         alt="Cinema" 
         className="w-full h-full object-cover opacity-40 blur-[2px] scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-transparent" />
+      
+      {/* Refletor animado no topo (Spotlight) */}
+      <motion.div 
+        animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.1, 1] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[90%] h-[500px] bg-accent/40 rounded-[100%] blur-[100px] pointer-events-none" 
+      />
+
+      {/* Partículas de "poeira" cinemática flutuando */}
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-white rounded-full pointer-events-none shadow-[0_0_8px_2px_rgba(255,255,255,0.8)]"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 60}%`,
+          }}
+          initial={{ opacity: 0, y: 0, scale: 0.5 }}
+          animate={{
+            y: -100,
+            opacity: [0, Math.random() * 0.5 + 0.3, 0],
+            scale: [0.5, 1.5, 0.5],
+          }}
+          transition={{
+            duration: Math.random() * 4 + 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: Math.random() * 3,
+          }}
+        />
+      ))}
     </div>
 
     <div className="relative z-10 flex-1 flex flex-col justify-end px-5 pb-8 pt-16">
