@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Bookmark, Star, Film, Tv, Play, ExternalLink, Flame } from "lucide-react";
 import TrailerModal from "./TrailerModal";
+import { getWatchProviders, getTrailer } from "@/lib/tmdb";
+import { Link } from "react-router-dom";
 
 export interface Recommendation {
+  id?: number;
   title: string;
   type: "movie" | "series";
   reason: string;
@@ -23,6 +26,20 @@ interface Props {
 const RecommendationCard = ({ rec, index, onSave, highMatch }: Props) => {
   const [imgError, setImgError] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
+  const [providers, setProviders] = useState<any[]>([]);
+  const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (rec.id) {
+      getWatchProviders(rec.id, rec.type).then(setProviders).catch(() => {});
+      getTrailer(rec.id, rec.type).then(url => {
+        if(url) {
+          const videoId = url.split("v=")[1];
+          setTrailerUrl(videoId);
+        }
+      }).catch(() => {});
+    }
+  }, [rec.id, rec.type]);
 
   const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(rec.title + " trailer")}`;
 
@@ -34,26 +51,28 @@ const RecommendationCard = ({ rec, index, onSave, highMatch }: Props) => {
         transition={{ delay: index * 0.08, duration: 0.4 }}
         className="card-cinema flex gap-3 items-start"
       >
-        <div className="w-20 h-28 rounded-lg bg-gradient-to-br from-secondary to-muted flex-shrink-0 flex items-center justify-center overflow-hidden">
+        <Link to={`/title/${rec.type}/${rec.id}`} className="w-20 h-28 rounded-lg bg-gradient-to-br from-secondary to-muted flex-shrink-0 flex items-center justify-center overflow-hidden block">
           {rec.posterUrl && !imgError ? (
             <img
               src={rec.posterUrl}
               alt={rec.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover hover:scale-105 transition-transform"
               onError={() => setImgError(true)}
               loading="lazy"
             />
           ) : (
-            <div className="flex flex-col items-center gap-1 text-muted-foreground p-1 text-center">
+            <div className="flex flex-col items-center gap-1 text-muted-foreground p-1 text-center hover:scale-105 transition-transform">
               {rec.type === "movie" ? <Film size={20} /> : <Tv size={20} />}
               <span className="text-[9px] leading-tight">Sem imagem</span>
             </div>
           )}
-        </div>
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="font-display font-semibold text-sm leading-tight">{rec.title}</h3>
+              <Link to={`/title/${rec.type}/${rec.id}`} className="hover:underline">
+                <h3 className="font-display font-semibold text-sm leading-tight">{rec.title}</h3>
+              </Link>
               {highMatch && (
                 <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent/15 text-accent">
                   <Flame size={10} className="fill-accent" />
@@ -82,6 +101,15 @@ const RecommendationCard = ({ rec, index, onSave, highMatch }: Props) => {
               ))}
             </div>
           </div>
+
+          {providers.length > 0 && (
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-[10px] text-muted-foreground mr-1">Onde assistir:</span>
+              {providers.slice(0, 4).map((p: any) => (
+                <img key={p.provider_id} src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} alt={p.provider_name} className="w-4 h-4 rounded-full" title={p.provider_name} />
+              ))}
+            </div>
+          )}
           {/* Trailer buttons */}
           <div className="flex items-center gap-2 mt-2">
             <a
@@ -94,22 +122,22 @@ const RecommendationCard = ({ rec, index, onSave, highMatch }: Props) => {
               Trailer
               <ExternalLink size={10} />
             </a>
-            {rec.youtubeVideoId && (
+            {trailerUrl && (
               <button
                 onClick={() => setShowTrailer(true)}
                 className="flex items-center gap-1 text-[11px] font-medium text-accent hover:underline"
               >
                 <Play size={12} />
-                Ver aqui
+                Ver Trailer
               </button>
             )}
           </div>
         </div>
       </motion.div>
 
-      {rec.youtubeVideoId && (
+      {trailerUrl && (
         <TrailerModal
-          videoId={rec.youtubeVideoId}
+          videoId={trailerUrl}
           title={rec.title}
           open={showTrailer}
           onClose={() => setShowTrailer(false)}

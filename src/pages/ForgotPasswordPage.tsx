@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import AuthLayout from "@/components/AuthLayout";
 
 const ForgotPasswordPage = () => {
@@ -15,13 +15,10 @@ const ForgotPasswordPage = () => {
     if (!email) { toast.error("Informe seu email"); return; }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
+      await sendPasswordResetEmail(auth, email);
       setSent(true);
       toast.success("Se o email estiver cadastrado, você receberá um link de recuperação.");
-    } catch {
+    } catch (e) {
       // Generic message for security
       toast.success("Se o email estiver cadastrado, você receberá um link de recuperação.");
       setSent(true);

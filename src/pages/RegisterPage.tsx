@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 import AuthLayout from "@/components/AuthLayout";
 import { validatePassword } from "@/lib/validation";
@@ -21,27 +21,28 @@ const RegisterPage = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.origin },
-      });
-      if (error) throw error;
-      toast.success("Conta criada! Verifique seu email para confirmar.");
-    } catch {
-      toast.error("Não foi possível criar a conta. Verifique seus dados e tente novamente.");
+      await createUserWithEmailAndPassword(auth, email, password);
+      toast.success("Conta criada com sucesso!");
+    } catch (e: any) {
+      if (e.code === 'auth/email-already-in-use') {
+        toast.error("Este email já está em uso.");
+      } else {
+        toast.error("Não foi possível criar a conta. Verifique seus dados e tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
+    if (provider === "apple") {
+      toast.error("Login com Apple temporariamente indisponível.");
+      return;
+    }
     try {
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) toast.error("Erro ao conectar. Tente novamente.");
-    } catch {
+      const providerObj = new GoogleAuthProvider();
+      await signInWithPopup(auth, providerObj);
+    } catch (e) {
       toast.error("Erro ao conectar. Tente novamente.");
     }
   };

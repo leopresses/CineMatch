@@ -1,25 +1,39 @@
 import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from "framer-motion";
-import { Film, Tv, Star, Heart, X } from "lucide-react";
+import { Film, Tv, Star, Heart, X, Info, Play } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Recommendation } from "./RecommendationCard";
 
 interface Props {
   rec: Recommendation;
   onSwipe: (liked: boolean) => void;
+  onPlayTrailer?: (rec: Recommendation) => void;
   isTop?: boolean;
   stackOffset?: number;
 }
 
 const SWIPE_THRESHOLD = 110;
 
-const SwipeCard = ({ rec, onSwipe, isTop = false, stackOffset = 0 }: Props) => {
+const SwipeCard = ({ rec, onSwipe, onPlayTrailer, isTop = false, stackOffset = 0 }: Props) => {
   const [imgError, setImgError] = useState(false);
+  const [showBigHeart, setShowBigHeart] = useState(false);
+  
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-220, 0, 220], [-18, 0, 18]);
   const likeOpacity = useTransform(x, [40, 140], [0, 1]);
   const nopeOpacity = useTransform(x, [-140, -40], [1, 0]);
   const bgGreen = useTransform(x, [40, 160], [0, 0.35]);
   const bgRed = useTransform(x, [-160, -40], [0.35, 0]);
+
+  const handleDoubleClick = () => {
+    if (!isTop) return;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(15);
+    setShowBigHeart(true);
+    setTimeout(() => {
+      onSwipe(true);
+      setShowBigHeart(false);
+    }, 600); // Wait for animation before swiping
+  };
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (!isTop) return;
@@ -51,7 +65,7 @@ const SwipeCard = ({ rec, onSwipe, isTop = false, stackOffset = 0 }: Props) => {
     >
       <div className="relative h-full w-full rounded-3xl overflow-hidden shadow-xl border bg-card">
         {/* Poster */}
-        <div className="relative h-full w-full">
+        <div className="relative h-full w-full" onDoubleClick={handleDoubleClick}>
           {rec.posterUrl && !imgError ? (
             <img
               src={rec.posterUrl}
@@ -70,6 +84,20 @@ const SwipeCard = ({ rec, onSwipe, isTop = false, stackOffset = 0 }: Props) => {
           {/* Color overlays */}
           {isTop && (
             <>
+              <AnimatePresence>
+                {showBigHeart && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: 1 }}
+                    exit={{ scale: 2, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                  >
+                    <Heart size={120} className="text-emerald-400 fill-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
               <motion.div
                 className="absolute inset-0 bg-emerald-500 pointer-events-none"
                 style={{ opacity: bgGreen }}
@@ -82,12 +110,32 @@ const SwipeCard = ({ rec, onSwipe, isTop = false, stackOffset = 0 }: Props) => {
           )}
 
           {/* Bottom gradient + info */}
-          <div className="absolute inset-x-0 bottom-0 p-5 pt-24 bg-gradient-to-t from-black/85 via-black/55 to-transparent text-white">
+          <div className="absolute inset-x-0 bottom-0 p-5 pt-24 bg-gradient-to-t from-black/85 via-black/55 to-transparent text-white pointer-events-none">
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/80">
               {rec.type === "movie" ? <Film size={12} /> : <Tv size={12} />}
               {rec.type === "movie" ? "Filme" : "Série"}
             </div>
-            <h2 className="font-display font-bold text-2xl leading-tight mt-1">{rec.title}</h2>
+            <h2 className="font-display font-bold text-2xl leading-tight mt-1 pointer-events-auto flex items-center justify-between">
+              {rec.title}
+              <div className="flex gap-2">
+                {onPlayTrailer && (
+                  <button 
+                    onClick={() => onPlayTrailer(rec)}
+                    className="p-2 rounded-full bg-accent/20 text-accent hover:bg-accent/30 transition-colors pointer-events-auto"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <Play size={20} className="fill-current" />
+                  </button>
+                )}
+                <Link 
+                  to={`/title/${rec.type}/${rec.id}`}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors pointer-events-auto"
+                  onPointerDown={(e) => e.stopPropagation()} // Prevents drag
+                >
+                  <Info size={20} />
+                </Link>
+              </div>
+            </h2>
 
             {rec.tags?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">

@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { Bookmark, Trash2, Film, Tv, Check } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Bookmark, Trash2, Film, Tv, Check, Star } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, orderBy, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import PageShell from "@/components/PageShell";
-import type { Tables } from "@/integrations/supabase/types";
 
-type WatchlistItem = Tables<"watchlist">;
+interface WatchlistItem {
+  id: string;
+  title: string;
+  item_type: "movie" | "series";
+  watched: boolean;
+  added_at: string;
+  poster_url?: string | null;
+  rating?: number;
+}
 
 const WatchlistPage = () => {
   const { user } = useAuth();
@@ -18,28 +26,53 @@ const WatchlistPage = () => {
   const fetchItems = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("watchlist")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("added_at", { ascending: false });
-    if (!error && data) setItems(data);
+    try {
+      const q = query(
+        collection(db, "watchlist"),
+        where("user_id", "==", user.uid),
+        orderBy("added_at", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+      const data: WatchlistItem[] = [];
+      querySnapshot.forEach((docSnap) => {
+        data.push({ id: docSnap.id, ...docSnap.data() } as WatchlistItem);
+      });
+      setItems(data);
+    } catch (e) {
+      console.error("Erro ao carregar lista", e);
+    }
     setLoading(false);
   };
 
   useEffect(() => { fetchItems(); }, [user]);
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("watchlist").delete().eq("id", id);
-    if (error) { toast.error("Erro ao remover"); return; }
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    toast.success("Removido da lista");
+    try {
+      await deleteDoc(doc(db, "watchlist", id));
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      toast.success("Removido da lista");
+    } catch {
+      toast.error("Erro ao remover");
+    }
   };
 
   const handleToggleWatched = async (item: WatchlistItem) => {
-    const { error } = await supabase.from("watchlist").update({ watched: !item.watched }).eq("id", item.id);
-    if (error) { toast.error("Erro ao atualizar"); return; }
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, watched: !i.watched } : i));
+    try {
+      await updateDoc(doc(db, "watchlist", item.id), { watched: !item.watched });
+      setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, watched: !i.watched } : i));
+    } catch {
+      toast.error("Erro ao atualizar");
+    }
+  };
+
+  const handleRating = async (item: WatchlistItem, rating: number) => {
+    try {
+      await updateDoc(doc(db, "watchlist", item.id), { rating });
+      setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, rating } : i));
+      toast.success("Avaliação salva!");
+    } catch {
+      toast.error("Erro ao salvar avaliação.");
+    }
   };
 
   const filtered = items.filter((i) => filter === "all" || i.item_type === filter);
@@ -66,7 +99,7 @@ const WatchlistPage = () => {
         {loading && (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="card-cinema h-20 animate-pulse bg-secondary rounded-xl" />
+              <div key={i} className="card-cinema h-20 animate-shimmer bg-secondary rounded-xl" />
             ))}
           </div>
         )}
@@ -95,27 +128,48 @@ const WatchlistPage = () => {
               exit={{ opacity: 0, x: -100 }}
               className="card-cinema flex items-center gap-3"
             >
-              <div className="w-12 h-16 rounded-lg bg-secondary flex-shrink-0 flex items-center justify-center">
-                {item.item_type === "movie" ? <Film size={20} className="text-muted-foreground" /> : <Tv size={20} className="text-muted-foreground" />}
+              <div className="w-16 h-24 rounded-lg bg-secondary flex-shrink-0 overflow-hidden shadow-sm flex items-center justify-center">
+                {item.poster_url ? (
+                  <img src={item.poster_url} className={`w-full h-full object-cover transition-all ${item.watched ? 'grayscale opacity-70' : ''}`} />
+                ) : (
+                  item.item_type === "movie" ? <Film size={20} className="text-muted-foreground" /> : <Tv size={20} className="text-muted-foreground" />
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className={`font-display font-semibold text-sm truncate ${item.watched ? "line-through opacity-60" : ""}`}>
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className={`font-display font-semibold text-base line-clamp-2 ${item.watched ? "line-through opacity-60" : ""}`}>
                   {item.title}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   {item.item_type === "movie" ? "Filme" : "Série"}
-                  {item.watched && " • Assistido ✓"}
+                  {item.watched && " • Assistido"}
                 </p>
+
+                {item.watched && (
+                  <div className="flex items-center gap-1 mt-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <button 
+                        key={i} 
+                        onClick={() => handleRating(item, i + 1)}
+                        className="touch-target p-1 -m-1"
+                      >
+                        <Star 
+                          size={16} 
+                          className={`transition-colors ${item.rating && item.rating > i ? "text-gold fill-gold" : "text-border"}`} 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-col items-center justify-between self-stretch py-1">
                 <button
                   onClick={() => handleToggleWatched(item)}
-                  className={`p-2 rounded-lg transition-colors touch-target ${item.watched ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors touch-target ${item.watched ? "bg-accent/20 text-accent" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
                 >
-                  <Check size={18} />
+                  <Check size={16} strokeWidth={item.watched ? 3 : 2} />
                 </button>
-                <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive transition-colors touch-target">
-                  <Trash2 size={18} />
+                <button onClick={() => handleDelete(item.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors touch-target">
+                  <Trash2 size={16} />
                 </button>
               </div>
             </motion.div>

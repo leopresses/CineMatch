@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 import AuthLayout from "@/components/AuthLayout";
 
@@ -21,10 +21,9 @@ const LoginPage = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      await signInWithEmailAndPassword(auth, email, password);
       navigate("/home");
-    } catch {
+    } catch (e) {
       toast.error("Email ou senha incorretos. Verifique e tente novamente.");
     } finally {
       setLoading(false);
@@ -32,14 +31,15 @@ const LoginPage = () => {
   };
 
   const handleOAuth = async (provider: "google" | "apple") => {
+    if (provider === "apple") {
+      toast.error("Login com Apple temporariamente indisponível.");
+      return;
+    }
     try {
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) {
-        toast.error("Erro ao conectar. Tente novamente.");
-      }
-    } catch {
+      const providerObj = new GoogleAuthProvider();
+      await signInWithPopup(auth, providerObj);
+      navigate("/home");
+    } catch (e) {
       toast.error("Erro ao conectar. Tente novamente.");
     }
   };

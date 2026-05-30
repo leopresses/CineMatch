@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Flame, Users, User, Library } from "lucide-react";
+import { Home, Flame, Users, Bookmark, User, Clapperboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -7,13 +7,13 @@ const tabs = [
   { path: "/home", icon: Home, label: "Home" },
   { path: "/swipe", icon: Flame, label: "Descobrir" },
   { path: "/sessions", icon: Users, label: "Sessões" },
-  { path: "/collections", icon: Library, label: "Coleções" },
+  { path: "/watchlist", icon: Bookmark, label: "Lista" },
   { path: "/profile", icon: User, label: "Perfil" },
 ];
 
 const hiddenPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/privacy", "/terms"];
 
-const BottomNav = () => {
+const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -21,29 +21,34 @@ const BottomNav = () => {
   if (!user || hiddenPaths.some((p) => location.pathname.startsWith(p))) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-surface bottom-safe md:hidden" style={{ boxShadow: "var(--shadow-nav)" }}>
-      <div className="flex items-center justify-around max-w-lg mx-auto px-2 pt-2 pb-1">
+    <nav className="hidden md:flex flex-col w-64 h-full glass-surface border-r border-border/50 bg-card/60 z-50 p-6">
+      <div className="flex items-center gap-2 mb-12">
+        <Clapperboard size={28} className="text-gold" />
+        <span className="font-display font-bold text-xl tracking-tight text-foreground">CineMatch</span>
+      </div>
+
+      <div className="flex flex-col gap-2 flex-1">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
           return (
             <button
               key={tab.path}
               onClick={() => navigate(tab.path)}
-              className="relative flex flex-col items-center gap-0.5 touch-target px-3 py-1 rounded-xl transition-colors"
+              className="relative flex items-center gap-4 px-4 py-3 rounded-xl transition-colors hover:bg-secondary/50 group"
             >
               {isActive && (
                 <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent"
+                  layoutId="sidebar-indicator"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 rounded-r-full bg-accent"
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
               <tab.icon
                 size={22}
-                className={isActive ? "text-accent" : "text-muted-foreground"}
+                className={`transition-colors ${isActive ? "text-accent" : "text-muted-foreground group-hover:text-foreground"}`}
                 strokeWidth={isActive ? 2.5 : 1.8}
               />
-              <span className={`text-[10px] font-medium ${isActive ? "text-accent" : "text-muted-foreground"}`}>
+              <span className={`text-sm font-semibold transition-colors ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
                 {tab.label}
               </span>
             </button>
@@ -54,4 +59,4 @@ const BottomNav = () => {
   );
 };
 
-export default BottomNav;
+export default Sidebar;

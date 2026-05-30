@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função para checar se o usuário está logado
+    function isAuthed() {
+      return request.auth != null;
+    }
+    
+    // Função para checar se o usuário é o dono do documento
+    function isOwner(userId) {
+      return isAuthed() && request.auth.uid == userId;
+    }
+
+    // 1. PERFIS DE USUÁRIOS
+    // Qualquer pessoa logada pode ler um perfil (necessário para ver quem está na sessão),
+    // mas SÓ o dono pode modificar o próprio perfil.
+    match /profiles/{userId} {
+      allow read: if isAuthed();
+      allow write: if isOwner(userId);
+    }
+
+    // 2. CONFIGURAÇÕES E PREFERÊNCIAS PRIVADAS
+    // Ninguém além do próprio usuário pode ler ou escrever isso. Sigilo absoluto.
+    match /user_preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 3. HISTÓRICO DE SWIPES (MATCHES) E WATCHLIST
+    // O usuário só pode criar swipes no próprio nome, e só ele mesmo pode ler.
+    match /user_swipes/{swipeId} {
+      allow read, delete: if isAuthed() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+      allow update: if false; // Swipes não podem ser editados, apenas criados ou deletados (rewind)
+    }
+    
+    match /watchlist/{itemId} {
+      allow read, delete, update: if isAuthed() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // 4. AVALIAÇÕES PÚBLICAS (REVIEWS)
+    // Qualquer um pode ler as avaliações, mas só o dono pode criar/editar a dele.
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create, update: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isAuthed() && resource.data.user_id == request.auth.uid;
+    }
+
+    // 5. SESSÕES COMPARTILHADAS (GRUPO)
+    // Qualquer um logado pode ver e entrar na sessão.
+    match /sessions/{sessionId} {
+      allow read: if isAuthed();
+      // Apenas quem cria é o Host
+      allow create: if isAuthed() && request.resource.data.host_id == request.auth.uid;
+      allow update: if isAuthed(); // Para atualizar o timestamp ou flags simples
+      allow delete: if isAuthed() && resource.data.host_id == request.auth.uid;
+      
+      // Subcoleções da Sessão
+      match /participants/{participantId} {
+        allow read: if isAuthed();
+        allow create, update: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+        allow delete: if isAuthed() && resource.data.user_id == request.auth.uid;
+      }
+      match /swipes/{swipeId} {
+        allow read: if isAuthed();
+        allow create: if isAuthed() && request.resource.data.user_id == request.auth.uid;
+      }
+    }
+  }
+}

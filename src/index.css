@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
-
 @layer base {
   :root {
     --background: 40 33% 98%;
@@ -60,13 +58,13 @@
     --gradient-hero: linear-gradient(180deg, hsl(235 45% 15%) 0%, hsl(250 40% 22%) 50%, hsl(38 92% 55% / 0.15) 100%);
 
     /* Shadows */
-    --shadow-card: 0 2px 12px -2px hsl(235 45% 15% / 0.06);
-    --shadow-card-hover: 0 8px 24px -4px hsl(235 45% 15% / 0.12);
+    --shadow-card: 0 4px 20px -2px hsl(235 45% 15% / 0.08);
+    --shadow-card-hover: 0 12px 30px -4px hsl(235 45% 15% / 0.15);
     --shadow-button: 0 4px 14px -2px hsl(38 92% 55% / 0.4);
     --shadow-nav: 0 -2px 20px -4px hsl(235 45% 15% / 0.08);
 
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'Outfit', system-ui, sans-serif;
   }
 
   .dark {
@@ -89,9 +87,9 @@
     --border: 235 25% 16%;
     --input: 235 25% 16%;
     --ring: 38 92% 55%;
-    --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.3);
-    --shadow-card-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
-    --shadow-nav: 0 -2px 20px -4px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 4px 24px -2px hsl(0 0% 0% / 0.5);
+    --shadow-card-hover: 0 12px 32px -4px hsl(0 0% 0% / 0.6);
+    --shadow-nav: 0 -2px 20px -4px hsl(0 0% 0% / 0.6);
   }
 }
 
@@ -102,7 +100,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -116,6 +114,10 @@
     @apply bg-card rounded-xl p-4;
     box-shadow: var(--shadow-card);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .dark .card-cinema {
+    box-shadow: var(--shadow-card), inset 0 1px 0 0 rgba(255,255,255,0.05);
   }
 
   .card-cinema:hover {
@@ -157,5 +159,20 @@
   .touch-target {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, hsl(var(--secondary)) 4%, hsl(var(--muted)) 25%, hsl(var(--secondary)) 36%);
+    background-size: 1000px 100%;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
   }
 }

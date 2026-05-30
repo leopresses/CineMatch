@@ -1,65 +1,78 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import { User, onAuthStateChanged, signOut as firebaseSignOut } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 interface AuthCtx {
   user: User | null;
-  session: Session | null;
+  profile: any;
+  preferences: any;
   loading: boolean;
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthCtx>({ user: null, session: null, loading: true, signOut: async () => {} });
+const AuthContext = createContext<AuthCtx>({ user: null, profile: null, preferences: null, loading: true, signOut: async () => {} });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [preferences, setPreferences] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Ensure profile exists when user logs in
-  const ensureProfile = async (u: User) => {
+  const ensureProfileAndPrefs = async (u: User) => {
     try {
-      const { data } = await supabase.from("profiles").select("id").eq("id", u.id).maybeSingle();
-      if (!data) {
-        const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "";
-        await supabase.from("profiles").insert({ id: u.id, name });
+      const userRef = doc(db, "profiles", u.uid);
+      const docSnap = await getDoc(userRef);
+      let currentProfile = {};
+      if (!docSnap.exists()) {
+        const name = u.displayName || u.email?.split("@")[0] || "";
+        const avatar_url = u.photoURL || null;
+        currentProfile = { id: u.uid, name, avatar_url, created_at: new Date().toISOString() };
+        await setDoc(userRef, currentProfile);
+      } else {
+        currentProfile = docSnap.data();
+        if (!currentProfile.avatar_url && u.photoURL) {
+          currentProfile.avatar_url = u.photoURL;
+          await setDoc(userRef, { avatar_url: u.photoURL }, { merge: true });
+        }
       }
-    } catch {
-      // silent – trigger may handle it
+      setProfile(currentProfile);
+
+      const prefRef = doc(db, "user_preferences", u.uid);
+      const prefSnap = await getDoc(prefRef);
+      if (prefSnap.exists()) {
+        setPreferences(prefSnap.data());
+      } else {
+        setPreferences({ favorite_genres: [], disliked_genres: [], streaming_services: [] });
+      }
+    } catch (e) {
+      console.error("Erro ao carregar dados do usuário:", e);
     }
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (session?.user) {
-        // defer to avoid blocking auth flow
-        setTimeout(() => ensureProfile(session.user), 0);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        ensureProfileAndPrefs(currentUser).then(() => setLoading(false));
+      } else {
+        setProfile(null);
+        setPreferences(null);
+        setLoading(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      if (session?.user) {
-        setTimeout(() => ensureProfile(session.user), 0);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, preferences, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

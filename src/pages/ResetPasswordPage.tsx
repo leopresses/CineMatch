@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { confirmPasswordReset } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
 import { validatePassword } from "@/lib/validation";
 import AuthLayout from "@/components/AuthLayout";
@@ -18,12 +19,20 @@ const ResetPasswordPage = () => {
     if (pwError) { toast.error(pwError); return; }
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      toast.error("Erro ao atualizar senha. Tente novamente.");
-    } else {
+    const params = new URLSearchParams(window.location.search);
+    const oobCode = params.get("oobCode");
+    if (!oobCode) {
+      toast.error("Link de recuperação inválido ou expirado.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await confirmPasswordReset(auth, oobCode, password);
       toast.success("Senha atualizada com sucesso!");
-      navigate("/home");
+      navigate("/login");
+    } catch (e) {
+      toast.error("Erro ao atualizar senha. Tente novamente.");
     }
     setLoading(false);
   };

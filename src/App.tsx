@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
+import Sidebar from "@/components/Sidebar";
 import HomePage from "./pages/HomePage";
 import SearchPage from "./pages/SearchPage";
 import SwipePage from "./pages/SwipePage";
 import SessionsPage from "./pages/SessionsPage";
-import WatchlistPage from "./pages/WatchlistPage";
+import CollectionsPage from "./pages/CollectionsPage";
+import CollectionDetailsPage from "./pages/CollectionDetailsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
@@ -19,6 +21,9 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import NotFound from "./pages/NotFound";
+import DetailsPage from "./pages/DetailsPage";
+import SessionSwipePage from "./pages/SessionSwipePage";
+import ActorPage from "./pages/ActorPage";
 import { ReactNode } from "react";
 
 const queryClient = new QueryClient();
@@ -50,8 +55,11 @@ const PublicOnlyRoute = ({ children }: { children: ReactNode }) => {
 };
 
 const AppRoutes = () => (
-  <div className="max-w-lg mx-auto relative">
-    <Routes>
+  <div className="flex h-screen w-full bg-background overflow-hidden relative">
+    <Sidebar />
+    <div className="flex-1 h-full overflow-y-auto scroll-smooth pb-20 md:pb-0">
+      <div className="max-w-screen-xl mx-auto w-full relative">
+        <Routes>
       {/* Public routes */}
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
@@ -66,15 +74,21 @@ const AppRoutes = () => (
       <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
       <Route path="/swipe" element={<ProtectedRoute><SwipePage /></ProtectedRoute>} />
       <Route path="/sessions" element={<ProtectedRoute><SessionsPage /></ProtectedRoute>} />
-      <Route path="/watchlist" element={<ProtectedRoute><WatchlistPage /></ProtectedRoute>} />
+      <Route path="/collections" element={<ProtectedRoute><CollectionsPage /></ProtectedRoute>} />
+      <Route path="/collection/:id" element={<ProtectedRoute><CollectionDetailsPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="/title/:type/:id" element={<ProtectedRoute><DetailsPage /></ProtectedRoute>} />
+      <Route path="/actor/:id" element={<ProtectedRoute><ActorPage /></ProtectedRoute>} />
+      <Route path="/session/:sessionId/swipe" element={<ProtectedRoute><SessionSwipePage /></ProtectedRoute>} />
 
       {/* Legacy auth redirect */}
       <Route path="/auth" element={<Navigate to="/login" replace />} />
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+    </div>
     <BottomNav />
   </div>
 );
