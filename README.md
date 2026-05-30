@@ -1,73 +1,73 @@
-# Welcome to your Lovable project
+# 🎬 CineMatch (NextWatch Sessions)
 
-## Project info
+O **CineMatch** é um aplicativo Web / PWA inteligente e social que resolve o eterno dilema de "O que vamos assistir hoje?". 
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Com um design premium inspirado nos melhores aplicativos de entretenimento e uma interface interativa no estilo *Tinder* (Swipe), o app cruza as suas preferências, o seu humor atual e os seus catálogos de streaming para indicar o filme ou série ideal.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Funcionalidades Principais
 
-**Use Lovable**
+- 👆 **Match Dinâmico (Swipe):** Arraste para a direita se gostou, para a esquerda se não gostou. O algoritmo aprende o seu gosto (DNA Cinéfilo) a cada curtida.
+- 🍿 **Sessões em Grupo:** Crie um link, mande no grupo do WhatsApp e todos dão "swipe". O aplicativo avisa na hora quando der "Match" (quando todos curtirem o mesmo filme).
+- 📱 **Progressive Web App (PWA):** Instalável no celular como um aplicativo nativo. Ícone na tela inicial e abertura sem barra de navegação.
+- 📺 **Filtros de Streaming Premium:** Marque quais streamings você assina (Netflix, Prime, Max, etc) nas Configurações. O app **só vai te sugerir filmes que você pode assistir**.
+- 🚫 **Bloqueio de Gêneros:** Não gosta de Terror? Adicione na sua lista negra e nunca mais receba essas recomendações.
+- ⭐ **Avaliações e Watchlist:** Salve os filmes para ver depois, crie listas personalizadas (Coleções) e deixe notas ou resenhas na página dos filmes.
+- 🛡️ **Segurança em 1º Lugar:** Banco de dados Firebase blindado com regras de segurança estritas e integração com o Google App Check (reCAPTCHA v3) anti-bots.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Tecnologias Utilizadas
 
-**Use your preferred IDE**
+- **Frontend:** React 18, TypeScript, Vite
+- **Estilização:** Tailwind CSS, Framer Motion (para animações de Swipe), Lucide (Ícones)
+- **Banco de Dados & Auth:** Firebase (Authentication, Firestore Database, Storage)
+- **APIs Externas:** TMDB API (The Movie Database) para o catálogo oficial de filmes e streamings do Brasil.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Como Rodar Localmente
 
-Follow these steps:
+### 1. Requisitos
+- [Node.js](https://nodejs.org/en/) instalado (versão 18+).
+- Conta ativa no [Firebase](https://firebase.google.com/).
+- Conta ativa no [TMDB](https://www.themoviedb.org/) para gerar a API Key.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 2. Passos
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+# Clone este repositório
+git clone https://github.com/leopresses/CineMatch.git
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Entre na pasta
+cd CineMatch
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Instale as dependências
+npm install
+
+# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+*Opcional: Crie um arquivo `.env` na raiz do projeto contendo as suas chaves do Firebase se não quiser usar as que estão direto no código.*
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## ☁️ Como Hospedar (Deploy)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Este projeto já está configurado para o **Firebase Hosting** e para a **Vercel**.
 
-## What technologies are used for this project?
+**Para deploy rápido via Vercel:**
+Acesse [vercel.com](https://vercel.com/), faça login com o GitHub, importe este repositório e clique em Deploy.
 
-This project is built with:
+**Para deploy via Firebase Hosting:**
+```bash
+npm install -g firebase-tools
+npm run build
+firebase login
+firebase deploy --only hosting
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+*Feito com 💡 por Léo Presses e Antigravity IA.*
