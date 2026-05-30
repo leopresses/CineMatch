@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['icon.png', 'og-image.png'],
       manifest: {
-        name: 'NextWatch Sessions',
-        short_name: 'NextWatch',
+        name: 'CineMatch',
+        short_name: 'CineMatch',
         description: 'Descubra o que assistir e crie sessões de cinema com seus amigos.',
         theme_color: '#09090b',
         background_color: '#09090b',
